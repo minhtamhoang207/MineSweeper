@@ -6,6 +6,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Objects;
@@ -96,9 +97,99 @@ public class ServerThread extends Thread {
                             } else oos.writeObject(SIGNUP_FAIL);
                         } else oos.writeObject(SIGNUP_FAIL);
                     }
+                    case "GET_ONLINE_PLAYERS" ->{
+                        ArrayList<Player> onlinePlayers = getListOnlinePlayer();
+    //                    oos.writeObject(onlinePlayers);
+                        sendToAllClients("GET_ONLINE_PLAYERS", onlinePlayers);
+                        break;
+                    }
+                    case "GET_RANK_PLAYERS" ->{
+                        ArrayList<Player> players = new ArrayList<>();
+                        players = playerController.getRankPlayersByPoint();
+                        sendToClient("GET_RANK_PLAYERS", players);
+                        break;
+                    }
                 }
             }
         } catch (Exception ex) {
+            Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void sendToClient(String cmd, Object data)
+    {
+        try {
+            SimpleEntry<String, Object> res = new SimpleEntry<>(cmd, data);
+            oos.writeObject(res);
+        } catch (IOException ex) {
+            Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void updateStatusOnline(String name, String status)
+    {
+//       playerController.UpdateStatus(name, status);
+       Enumeration<Player> keys = listClient.keys();
+        while(keys.hasMoreElements())
+        {
+            Player p = keys.nextElement();
+            if(p.getUserName().equals(name))
+            {
+                p.setStatus(status);
+                serverNoti.append("tran thai cua" +name + " sau update la" + p.getStatus());
+                break;
+            }
+                        
+        }
+//        Player updatedPlayer = playerController.checkPlayer(name);
+//        listClient.put(updatedPlayer, this);
+    }
+
+    
+    public ArrayList<Player> getListOnlinePlayer()
+    {
+        Enumeration<Player> keys = listClient.keys();   
+        ArrayList<Player> onlinePlayers = new ArrayList<>();
+        while(keys.hasMoreElements())
+        {
+            onlinePlayers.add(keys.nextElement());
+        }
+        return onlinePlayers;
+    }
+    
+     public void sendToAllClients(String cmd, Object data)
+    {
+        Enumeration<ServerThread> clients = listClient.elements();
+        ServerThread client;
+        while(clients.hasMoreElements())
+        {
+            client = clients.nextElement();
+            try {
+                SimpleEntry<String, Object> res = new SimpleEntry<>(cmd, data);
+                client.oos.writeObject(res);
+            } catch (IOException ex) {
+                Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+    }
+    
+    public void sendToSpecificClient(String _clientName, String cmd, Object data)
+    {
+        Enumeration<Player> keys = listClient.keys();
+        ServerThread client = null;
+        while(keys.hasMoreElements())
+        {
+            Player p = keys.nextElement();
+            if(p.getUserName().equals(_clientName))
+            {
+                client = listClient.get(p);
+            }
+        }
+        try {
+            SimpleEntry<String, Object> res = new SimpleEntry<>(cmd, data);
+            client.oos.writeObject(res);
+        } catch (IOException ex) {
             Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
         }
     }

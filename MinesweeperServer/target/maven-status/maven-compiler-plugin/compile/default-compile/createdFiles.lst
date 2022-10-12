@@ -1,6 +1,6 @@
 main\ServerThread.class
+controller\PlayerController.class
 main\ServerRun.class
-model\ServerModel.class
 model\Player.class
 util\DBConnection.class
 view\ServerView$1.class

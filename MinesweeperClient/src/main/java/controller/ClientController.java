@@ -4,6 +4,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import javax.swing.JOptionPane;
 
 import model.Player;
 import util.Notification;
@@ -13,8 +15,12 @@ public class ClientController implements Runnable, Notification {
     private Socket myClient;
     Thread clientThread;
     String clientName;
+    
     LoginView loginView;
+    HomeView homeView;
+    
     boolean isRunning;
+    public String oppName;
     ObjectInputStream ois;
     ObjectOutputStream oos;
     
@@ -23,16 +29,44 @@ public class ClientController implements Runnable, Notification {
     public ClientController() {
         instance = this;
         loginView = new LoginView();
+        homeView = new HomeView();
 
         loginView.setVisible(true);
         loginView.setLocationRelativeTo(null);
         
         isRunning = true;
         addEventsLoginView();
+//        addEventsHomeView();
     }
     
     @Override
-    public void run() {}
+    public void run() {
+        SimpleEntry response;
+        String cmd;
+        Object data;
+        while(isRunning)
+        {
+            Object o  = receiveData();
+            response = (SimpleEntry)o;
+            cmd = (String)response.getKey();
+            data = response.getValue();
+            System.out.println("nhan duoc" + cmd);
+            switch(cmd)
+            {
+                case "GET_ONLINE_PLAYERS":
+                    ArrayList<Player> onlinePlayers = (ArrayList)data;
+                    homeView.listPlayer = onlinePlayers;
+                    homeView.setOnlineTable(onlinePlayers);
+                    break;
+                case "GET_RANK_PLAYERS":
+                    ArrayList<Player> rankPlayers = (ArrayList)data;
+                    homeView.listRankPlayer = rankPlayers;
+                    homeView.setRankTable(rankPlayers);
+                    break;
+            }
+
+        }
+    }
     
     //add events
     void addEventsLoginView() {
@@ -48,12 +82,20 @@ public class ClientController implements Runnable, Notification {
                 clientName = player.getUserName();
                 clientThread = new Thread(instance);
                 clientThread.start();
+                sendData("GET_ONLINE_PLAYERS", null);
+                sendData("GET_RANK_PLAYERS", null);
+                homeView.setVisible(true);
+                homeView.setLocationRelativeTo(null);
             } else if(result.equals(ALREADY_LOGIN)){
                 loginView.showMessage(result);
                 loginView.setVisible(true);
+                homeView.setVisible(true);
+                homeView.setLocationRelativeTo(null);
                 clientName = player.getUserName();
                 clientThread = new Thread(instance);
                 clientThread.start();
+                sendData("GET_ONLINE_PLAYERS", null);
+                sendData("GET_RANK_PLAYERS", null);
             }
             else {
                 loginView.showMessage(LOGIN_FAIL);
@@ -73,6 +115,10 @@ public class ClientController implements Runnable, Notification {
                 clientName = player.getUserName();
                 clientThread = new Thread(instance);
                 clientThread.start();
+                sendData("GET_ONLINE_PLAYERS", null);
+                sendData("GET_RANK_PLAYERS", null);
+                homeView.setVisible(true);
+                homeView.setLocationRelativeTo(null);
             } else {
                 loginView.showMessage(SIGNUP_FAIL);
             }

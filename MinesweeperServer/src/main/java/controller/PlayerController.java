@@ -3,11 +3,13 @@ package controller;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import util.*;
 import model.Player;
 
 public class PlayerController { // controller xử lý dữ liệu của player
     private final Connection connection;
+    private final String SELECT_PLAYERS_BY_POINT = "SELECT * FROM player ORDER BY point DESC;";
 
     private static PlayerController instance;
     
@@ -74,6 +76,29 @@ public class PlayerController { // controller xử lý dữ liệu của player
             e.printStackTrace();
             return "FAILED";
         }
+    }
+    
+    public ArrayList<Player> getRankPlayersByPoint()
+    {
+        ArrayList<Player> players = new ArrayList<>();
+        try {
+         Statement stmt = connection.createStatement();
+         ResultSet rs = stmt.executeQuery(SELECT_PLAYERS_BY_POINT);
+         while(rs.next())
+         {
+             String username = rs.getString("username");
+             float point = rs.getFloat("point");
+             float avgPointOpp = rs.getFloat("avgPointOpp");
+             String avgTime = rs.getTime("avgTime").toString();
+             String status = rs.getString("status");
+             Player player = new Player(username, point, avgPointOpp, avgTime, status);
+             players.add(player);
+         }
+        }catch(Exception e) {
+         e.printStackTrace();
+        } 
+//        return null;
+        return players;
     }
     
 }
